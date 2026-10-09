@@ -1,0 +1,27 @@
+[
+  {
+    "id": "b1f28fdb-3b05-4461-accb-d6c7b54129d3",
+    "table_number": "Table 01",
+    "is_active": true
+  },
+  {
+    "id": "5e9ac17f-d799-43d2-9749-74c53459f2a4",
+    "table_number": "Table 02",
+    "is_active": true
+  },
+  {
+    "id": "e8236ec9-b881-4489-9b85-36b424c23c78",
+    "table_number": "Table 03",
+    "is_active": true
+  },
+  {
+    "id": "2d84921c-7120-497b-b5bb-f68b4051be91",
+    "table_number": "Table 04",
+    "is_active": true
+  },
+  {
+    "id": "6da69581-655f-4564-9257-c0a630885dd1",
+    "table_number": "Table 05",
+    "is_active": true
+  }
+]

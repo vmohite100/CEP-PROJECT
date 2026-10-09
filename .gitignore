@@ -1,0 +1,20 @@
+# Dependencies
+node_modules
+.pnp
+.pnp.js
+
+# Production build
+dist
+build
+
+# Environment
+.env.local
+.env.*.local
+
+# Editor & System
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+Thumbs.db
+*.log
