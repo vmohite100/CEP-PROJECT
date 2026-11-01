@@ -1,0 +1,68 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: 'Work Sans', system-ui, -apple-system, sans-serif;
+  --font-display: 'Playfair Display', Georgia, serif;
+  --font-body: 'Work Sans', system-ui, sans-serif;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-espresso: var(--espresso);
+  --color-caramel: var(--caramel);
+  --color-cream: var(--cream);
+}
+
+:root {
+  --radius: 0.75rem;
+  --background: oklch(97.5% 0.012 85);
+  --foreground: oklch(27% 0.035 55);
+  --card: oklch(99.5% 0.006 85);
+  --card-foreground: oklch(27% 0.035 55);
+  --popover: oklch(99.5% 0.006 85);
+  --popover-foreground: oklch(27% 0.035 55);
+  --primary: oklch(36% 0.06 50);
+  --primary-foreground: oklch(97% 0.012 85);
+  --secondary: oklch(93% 0.025 80);
+  --secondary-foreground: oklch(32% 0.05 55);
+  --muted: oklch(94% 0.02 80);
+  --muted-foreground: oklch(50% 0.03 60);
+  --accent: oklch(75% 0.11 65);
+  --accent-foreground: oklch(25% 0.04 50);
+  --destructive: oklch(55% 0.2 27);
+  --destructive-foreground: oklch(97% 0.01 85);
+  --border: oklch(89% 0.02 75);
+  --input: oklch(89% 0.02 75);
+  --ring: oklch(60% 0.09 55);
+  --espresso: oklch(30% 0.05 50);
+  --caramel: oklch(72% 0.12 68);
+  --cream: oklch(96% 0.018 85);
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--background);
+  color: var(--foreground);
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
