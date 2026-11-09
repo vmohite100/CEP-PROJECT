@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
 import { formatINR } from '../lib/utils';
-import { Minus, Plus, Trash2, ArrowRight, ShoppingBag, ChevronDown, CheckCircle, Receipt, Clock } from 'lucide-react';
+import { Minus, Plus, Trash2, ArrowRight, ShoppingBag, ChevronDown, CheckCircle, Receipt, Clock, UserCheck } from 'lucide-react';
 import { createOrder, type CafeOrder } from '../lib/orderService';
 import ReceiptModal from '../components/ReceiptModal';
 import type { Page } from '../App';
@@ -10,6 +11,7 @@ type Step = 'cart' | 'details' | 'payment' | 'success';
 
 export default function CartPage({ navigate }: { navigate: (page: Page) => void }) {
   const { items, updateQty, removeItem, clearCart, total, count } = useCart();
+  const { user, isAuthenticated, openAuthModal } = useAuth();
   const [step, setStep] = useState<Step>('cart');
   const [orderType, setOrderType] = useState<'dine_in' | 'takeaway'>('dine_in');
   const [tableNo, setTableNo] = useState('');
@@ -20,6 +22,13 @@ export default function CartPage({ navigate }: { navigate: (page: Page) => void 
   const [placing, setPlacing] = useState(false);
   const [placedOrder, setPlacedOrder] = useState<CafeOrder | null>(null);
   const [showReceipt, setShowReceipt] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      if (user.name && !customerName) setCustomerName(user.name);
+      if (user.phone && !phone) setPhone(user.phone);
+    }
+  }, [user]);
 
   const gst = Math.round(total * 0.05);
   const grandTotal = total + gst;
@@ -183,10 +192,25 @@ export default function CartPage({ navigate }: { navigate: (page: Page) => void 
 
               {/* STEP 2: Order Details */}
               <div className="bg-white rounded-2xl border border-border shadow-sm p-5">
-                <h2 className="font-semibold text-espresso mb-4 flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-cream" style={{ background: 'oklch(30% 0.05 50)' }}>2</span>
-                  Order Details
-                </h2>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="font-semibold text-espresso flex items-center gap-2">
+                    <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-cream" style={{ background: 'oklch(30% 0.05 50)' }}>2</span>
+                    Order Details
+                  </h2>
+                  {isAuthenticated && user ? (
+                    <span className="text-xs bg-emerald-100 text-emerald-800 font-medium px-2 py-0.5 rounded-full flex items-center gap-1">
+                      <UserCheck className="h-3 w-3" /> Signed in
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => openAuthModal()}
+                      className="text-xs text-primary font-semibold hover:underline"
+                    >
+                      Sign in for 1-click details
+                    </button>
+                  )}
+                </div>
                 <div className="space-y-4">
                   <div>
                     <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-2">Order Type</label>

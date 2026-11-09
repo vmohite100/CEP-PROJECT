@@ -448,7 +448,7 @@ export default function AdminPage({ onBack }: { onBack?: () => void } = {}) {
                       menuCatFilter === cat.id ? 'bg-espresso text-cream' : 'bg-muted text-muted-foreground hover:text-espresso'
                     }`}
                   >
-                    {cat.emoji} {cat.name}
+                    {cat.name}
                   </button>
                 ))}
               </div>
@@ -464,7 +464,12 @@ export default function AdminPage({ onBack }: { onBack?: () => void } = {}) {
                   return (
                     <div key={item.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-muted/15 transition-colors">
                       <div className="flex items-start gap-3">
-                        <span className="text-2xl mt-0.5">{cat?.emoji || '☕'}</span>
+                        <img
+                          src={item.image_url}
+                          alt={item.name}
+                          className="h-11 w-11 rounded-lg object-cover border border-border shrink-0"
+                          loading="lazy"
+                        />
                         <div>
                           <div className="flex items-center gap-2">
                             <h3 className="font-semibold text-espresso text-sm">{item.name}</h3>

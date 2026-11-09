@@ -60,3 +60,4 @@ export function resetMenuDefaults(): void {
   localStorage.removeItem(MENU_STORAGE_KEY);
   window.dispatchEvent(new Event('tfc_menu_updated'));
 }
+

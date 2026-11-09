@@ -167,3 +167,4 @@ export function subscribeToOrders(callback: (orders: CafeOrder[]) => void): () =
     window.removeEventListener('storage', handler);
   };
 }
+

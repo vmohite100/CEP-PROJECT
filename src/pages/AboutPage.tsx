@@ -43,7 +43,7 @@ export default function AboutPage() {
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
-            {[['2022', 'Year Founded'], ['500+', 'Daily Customers'], ['22', 'Menu Items'], ['100%', 'Indian Beans']].map(([val, label]) => (
+            {[['2022', 'Year Founded'], ['500+', 'Daily Customers'], ['63+', 'Artisan Items'], ['100%', 'Indian Beans']].map(([val, label]) => (
               <div key={label} className="bg-white rounded-2xl border border-border p-6 text-center shadow-sm">
                 <p className="font-display text-3xl font-bold text-caramel">{val}</p>
                 <p className="text-sm text-muted-foreground mt-1 font-medium">{label}</p>

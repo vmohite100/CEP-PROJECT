@@ -1,33 +1,33 @@
 import { useState, useEffect } from 'react';
-import { ArrowRight, QrCode, MapPin, Star } from 'lucide-react';
+import { ArrowRight, QrCode, MapPin, Star, Plus, Check } from 'lucide-react';
 import { getMenuItems, getCategories } from '../lib/menuService';
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
 import { formatINR } from '../lib/utils';
 import type { Page } from '../App';
+import type { MenuItem } from '../data/menuData';
 
-const CAT_BG: Record<string, string> = {
-  '1': 'from-amber-900/80 to-amber-700/80',
-  '2': 'from-sky-900/80 to-sky-700/80',
-  '3': 'from-pink-900/80 to-pink-700/80',
-  '4': 'from-green-900/80 to-emerald-700/80',
-  '5': 'from-orange-900/80 to-orange-700/80',
-};
+interface HomePageProps {
+  navigate: (page: Page, categoryFilter?: string) => void;
+}
 
-const TESTIMONIALS = [
-  { name: 'Priya M.', text: 'Best cappuccino in Pune, hands down. The atmosphere is perfect for studying!', stars: 5 },
-  { name: 'Rahul K.', text: 'Love the QR ordering system — so convenient. The Oreo shake is heavenly.', stars: 5 },
-  { name: 'Sneha P.', text: 'The paneer tikka sandwich + cold brew combo is my daily ritual now!', stars: 5 },
-];
-
-export default function HomePage({ navigate }: { navigate: (page: Page) => void }) {
-  const { addItem } = useCart();
+export default function HomePage({ navigate }: HomePageProps) {
+  const { addItem, items: cartItems } = useCart();
+  const { requireAuth } = useAuth();
   const categories = getCategories();
-  const [popularItems, setPopularItems] = useState(() => getMenuItems().filter(i => i.is_popular).slice(0, 6));
+  const [bestsellers, setBestsellers] = useState<MenuItem[]>([]);
+  const [addedNotice, setAddedNotice] = useState<string | null>(null);
 
   useEffect(() => {
-    const handleUpdate = () => {
-      setPopularItems(getMenuItems().filter(i => i.is_popular).slice(0, 6));
+    const loadBestsellers = () => {
+      const all = getMenuItems();
+      // Look for the specific bestsellers or fallback to items with is_bestseller
+      const filtered = all.filter(i => i.is_bestseller).slice(0, 6);
+      setBestsellers(filtered.length > 0 ? filtered : all.slice(0, 6));
     };
+    loadBestsellers();
+
+    const handleUpdate = () => loadBestsellers();
     window.addEventListener('tfc_menu_updated', handleUpdate);
     window.addEventListener('storage', handleUpdate);
     return () => {
@@ -36,92 +36,126 @@ export default function HomePage({ navigate }: { navigate: (page: Page) => void 
     };
   }, []);
 
+  const handleAddToCart = (item: MenuItem) => {
+    requireAuth(() => {
+      addItem({
+        id: item.id,
+        name: item.name,
+        price: item.price,
+        image_url: item.image_url,
+        category: item.category
+      });
+      setAddedNotice(item.name);
+      setTimeout(() => setAddedNotice(null), 2500);
+    });
+  };
+
   return (
     <div>
-      {/* Hero Section */}
-      <section className="relative min-h-[85vh] flex items-center">
-        <div className="absolute inset-0">
-          <div className="h-full w-full" style={{
-            background: 'linear-gradient(135deg, oklch(18% 0.04 50) 0%, oklch(28% 0.06 48) 40%, oklch(25% 0.05 55) 100%)'
-          }} />
-          {/* Coffee steam / texture overlay */}
-          <div className="absolute inset-0 opacity-20" style={{
-            backgroundImage: `radial-gradient(ellipse at 30% 40%, oklch(72% 0.12 68) 0%, transparent 50%), radial-gradient(ellipse at 80% 60%, oklch(60% 0.09 55) 0%, transparent 50%)`
-          }} />
+      {/* Toast Notification when item added */}
+      {addedNotice && (
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-lg bg-emerald-800 text-white px-4 py-3 shadow-xl animate-in slide-in-from-bottom-5">
+          <Check className="h-4 w-4 text-emerald-300" />
+          <span className="text-sm font-medium">Added &ldquo;{addedNotice}&rdquo; to your order!</span>
         </div>
-        <div className="relative mx-auto max-w-6xl px-4 py-28 md:py-40">
-          <div className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 mb-6 text-xs font-semibold uppercase tracking-widest text-caramel border border-caramel/30 bg-caramel/10">
-            ☕ Now Open · Karve Road, Pune
-          </div>
-          <h1 className="max-w-2xl font-display text-4xl font-bold leading-tight text-cream md:text-6xl mb-6">
-            Your First Sip.<br />Your Favourite Ritual.
+      )}
+
+      {/* SECTION 1: HERO */}
+      <section className="relative">
+        <div className="absolute inset-0">
+          <img
+            src="/hero-cafe.jpg"
+            alt="Inside THE FIRST COFFEE"
+            className="h-full w-full object-cover"
+          />
+          <div className="absolute inset-0 bg-espresso/70"></div>
+        </div>
+        <div className="relative mx-auto flex max-w-6xl flex-col items-start gap-6 px-4 py-28 md:py-40">
+          <h1 className="max-w-2xl font-display text-4xl font-bold leading-tight text-cream md:text-6xl text-balance">
+            Your First Sip. Your Favourite Ritual.
           </h1>
-          <p className="max-w-xl text-lg text-cream/80 mb-8 leading-relaxed">
-            Specialty coffee and fresh food in the heart of Erandwane, Pune. Scan, order, and relax — we'll bring it to your table.
+          <p className="max-w-xl text-lg text-cream/85">
+            Specialty coffee and fresh food in the heart of Erandwane, Pune. Scan, order, and relax — we&apos;ll bring it to your table.
           </p>
           <div className="flex flex-wrap gap-3">
             <button
               onClick={() => navigate('menu')}
-              className="inline-flex items-center gap-2 rounded-xl px-8 py-3.5 text-sm font-bold shadow-lg transition-all hover:opacity-90 active:scale-95"
-              style={{ background: 'oklch(72% 0.12 68)', color: 'oklch(25% 0.04 50)' }}
+              className="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 disabled:cursor-not-allowed shadow h-10 rounded-md px-8 bg-caramel text-espresso hover:bg-caramel/90 font-semibold"
             >
-              Explore Our Menu <ArrowRight size={16} />
+              Explore Our Menu <ArrowRight className="ml-1 h-4 w-4" />
             </button>
             <button
-              onClick={() => navigate('cart')}
-              className="inline-flex items-center gap-2 rounded-xl border border-cream/50 bg-transparent px-8 py-3.5 text-sm font-bold text-cream hover:bg-cream/10 transition-all active:scale-95"
+              onClick={() => navigate('menu')}
+              className="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 disabled:cursor-not-allowed border shadow-sm h-10 rounded-md px-8 border-cream/60 bg-transparent text-cream hover:bg-cream/10 hover:text-cream font-semibold"
             >
               Order Now
             </button>
           </div>
-
-          {/* Stats */}
-          <div className="flex flex-wrap gap-8 mt-14">
-            {[['500+', 'Happy Customers Daily'], ['22', 'Menu Items'], ['4.9★', 'Average Rating']].map(([val, label]) => (
-              <div key={label}>
-                <p className="font-display text-2xl font-bold text-caramel">{val}</p>
-                <p className="text-sm text-cream/60 mt-0.5">{label}</p>
-              </div>
-            ))}
-          </div>
         </div>
       </section>
 
-      {/* Featured & Bestsellers */}
+      {/* SECTION 2: FEATURED & BESTSELLERS */}
       <section className="mx-auto max-w-6xl px-4 py-16">
-        <div className="flex items-end justify-between mb-8">
+        <div className="flex items-end justify-between">
           <div>
-            <p className="text-caramel text-xs font-semibold uppercase tracking-widest mb-1">Customer Favorites</p>
-            <h2 className="font-display text-3xl font-bold text-espresso">Featured & Bestsellers</h2>
+            <h2 className="font-display text-3xl font-bold">Featured &amp; Bestsellers</h2>
             <p className="mt-1 text-muted-foreground">A few favourites from our menu.</p>
           </div>
-          <button onClick={() => navigate('menu')} className="hidden text-sm font-semibold text-espresso hover:text-caramel transition-colors md:flex items-center gap-1">
-            View full menu <ArrowRight size={14} />
+          <button
+            onClick={() => navigate('menu')}
+            className="hidden text-sm font-medium text-primary hover:underline md:block cursor-pointer"
+          >
+            View full menu &rarr;
           </button>
         </div>
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {popularItems.map(item => {
-            const cat = categories.find(c => c.id === item.category_id);
+
+        <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {bestsellers.map(item => {
+            const inCart = cartItems.find(c => c.id === item.id);
             return (
-              <div key={item.id} className="group bg-white rounded-2xl border border-border shadow-sm hover:shadow-lg transition-all overflow-hidden">
-                {/* Card image area */}
-                <div className={`h-40 bg-gradient-to-br ${CAT_BG[item.category_id]} flex items-center justify-center relative`}>
-                  <span className="text-6xl">{cat?.emoji}</span>
-                  <span className="absolute top-3 right-3 text-xs font-semibold px-2.5 py-1 rounded-full bg-caramel text-espresso">
-                    Popular
-                  </span>
+              <div
+                key={item.id}
+                className="rounded-xl border border-border/60 bg-card text-card-foreground shadow overflow-hidden transition-all duration-200 hover:shadow-md hover:-translate-y-0.5"
+              >
+                <div className="h-44 w-full overflow-hidden bg-secondary">
+                  <img
+                    src={item.image_url}
+                    alt={item.name}
+                    className="h-full w-full object-cover transition-transform duration-300 hover:scale-105"
+                    loading="lazy"
+                  />
                 </div>
-                <div className="p-4">
-                  <h3 className="font-semibold text-espresso">{item.name}</h3>
-                  <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{item.description}</p>
-                  <div className="flex items-center justify-between mt-4">
-                    <span className="font-bold text-espresso text-lg">{formatINR(item.price)}</span>
+                <div className="p-5">
+                  <div className="flex items-start justify-between gap-2">
+                    <h3 className="font-display text-lg font-semibold text-foreground">{item.name}</h3>
+                    <div className="inline-flex items-center rounded-md border border-transparent px-2.5 py-0.5 text-xs font-semibold bg-amber-500 text-white shadow-sm shrink-0">
+                      <Star className="mr-1 h-3 w-3 fill-current" /> Bestseller
+                    </div>
+                  </div>
+                  <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
+                    {item.description}
+                  </p>
+                  <div className="mt-4 flex items-center justify-between">
+                    <span className="text-lg font-bold text-foreground">
+                      {formatINR(item.price)}
+                    </span>
                     <button
-                      onClick={() => addItem({ id: item.id, name: item.name, price: item.price, category: cat?.name })}
-                      className="text-sm font-semibold text-cream px-4 py-1.5 rounded-full transition-all hover:opacity-90 active:scale-95"
-                      style={{ background: 'oklch(30% 0.05 50)' }}
+                      onClick={() => handleAddToCart(item)}
+                      className={`inline-flex items-center justify-center gap-1.5 whitespace-nowrap font-medium cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 h-8 rounded-md px-3 text-xs shadow-sm ${
+                        inCart
+                          ? 'bg-emerald-700 text-white hover:bg-emerald-800'
+                          : 'border border-input bg-background hover:bg-accent hover:text-accent-foreground text-foreground'
+                      }`}
                     >
-                      + Add
+                      {inCart ? (
+                        <>
+                          <Check className="h-3.5 w-3.5" /> Added ({inCart.quantity})
+                        </>
+                      ) : (
+                        <>
+                          <Plus className="h-3.5 w-3.5" /> Add to cart
+                        </>
+                      )}
                     </button>
                   </div>
                 </div>
@@ -129,99 +163,73 @@ export default function HomePage({ navigate }: { navigate: (page: Page) => void 
             );
           })}
         </div>
-        <div className="text-center mt-8 md:hidden">
-          <button onClick={() => navigate('menu')} className="text-sm font-semibold text-espresso hover:text-caramel transition-colors">
-            View full menu →
-          </button>
-        </div>
       </section>
 
-      {/* Browse by Category */}
-      <section className="py-16" style={{ background: 'oklch(95% 0.015 80)' }}>
+      {/* SECTION 3: BROWSE BY CATEGORY */}
+      <section className="bg-secondary/60 py-16">
         <div className="mx-auto max-w-6xl px-4">
-          <p className="text-caramel text-xs font-semibold uppercase tracking-widest mb-1">What we serve</p>
-          <h2 className="font-display text-3xl font-bold text-espresso mb-8">Browse by Category</h2>
-          <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
+          <h2 className="font-display text-3xl font-bold">Browse by category</h2>
+          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {categories.map(cat => (
               <button
                 key={cat.id}
-                onClick={() => navigate('menu')}
-                className="group bg-white rounded-2xl border border-border p-5 text-center hover:shadow-md hover:border-caramel/50 transition-all"
+                onClick={() => navigate('menu', cat.name)}
+                className="text-left cursor-pointer group"
               >
-                <span className="text-4xl">{cat.emoji}</span>
-                <p className="font-semibold text-espresso mt-3 text-sm">{cat.name}</p>
-                <p className="text-xs text-muted-foreground mt-1">{cat.description}</p>
+                <div className="rounded-xl border border-border/70 bg-card text-card-foreground shadow h-full transition-all duration-200 group-hover:shadow-md group-hover:border-primary/50 group-hover:-translate-y-0.5">
+                  <div className="p-5">
+                    <h3 className="font-display text-lg font-semibold text-foreground group-hover:text-primary transition-colors">
+                      {cat.name}
+                    </h3>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {cat.description}
+                    </p>
+                  </div>
+                </div>
               </button>
             ))}
           </div>
         </div>
       </section>
 
-      {/* QR Order Section */}
+      {/* SECTION 4: ORDER FROM YOUR TABLE */}
       <section className="mx-auto max-w-6xl px-4 py-16">
-        <div className="grid items-center gap-12 md:grid-cols-2">
+        <div className="grid items-center gap-8 md:grid-cols-2">
           <div>
-            <p className="text-caramel text-xs font-semibold uppercase tracking-widest mb-2">Dine-in Experience</p>
-            <h2 className="font-display text-3xl font-bold text-espresso mb-4">Order from your table</h2>
-            <p className="text-muted-foreground leading-relaxed mb-6">
-              Dining in? Just scan the QR code on your table to open the menu with your table already selected — no waiting, no queues. Your order comes straight to you.
+            <h2 className="font-display text-3xl font-bold text-foreground">Order from your table</h2>
+            <p className="mt-3 text-muted-foreground">
+              Dining in? Just scan the QR code on your table to open the menu with your table already selected — no waiting, no queues.
             </p>
-            <ul className="space-y-3 mb-8">
-              {['Scan QR code at your table', 'Browse & add items to cart', 'Choose payment method', 'We bring it to your table'].map((step, i) => (
-                <li key={step} className="flex items-center gap-3 text-sm">
-                  <span className="flex w-6 h-6 rounded-full items-center justify-center text-xs font-bold text-cream flex-shrink-0" style={{ background: 'oklch(30% 0.05 50)' }}>{i + 1}</span>
-                  <span className="text-espresso font-medium">{step}</span>
-                </li>
-              ))}
-            </ul>
-            <button onClick={() => navigate('menu')} className="inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-bold text-cream transition-all hover:opacity-90" style={{ background: 'oklch(30% 0.05 50)' }}>
-              Browse the Menu <ArrowRight size={14} />
+            <button
+              onClick={() => navigate('menu')}
+              className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring bg-primary text-primary-foreground shadow hover:bg-primary/90 h-9 px-4 py-2 mt-6"
+            >
+              Browse the menu
             </button>
           </div>
           <div className="flex justify-center">
-            <div className="flex h-52 w-52 items-center justify-center rounded-3xl shadow-xl" style={{ background: 'oklch(93% 0.025 80)' }}>
-              <QrCode size={100} style={{ color: 'oklch(30% 0.05 50)' }} />
+            <div className="flex h-48 w-48 items-center justify-center rounded-2xl bg-secondary shadow-inner">
+              <QrCode className="h-24 w-24 text-primary" />
             </div>
           </div>
         </div>
       </section>
 
-      {/* Testimonials */}
-      <section className="py-16" style={{ background: 'oklch(97% 0.012 85)' }}>
-        <div className="mx-auto max-w-6xl px-4">
-          <div className="text-center mb-10">
-            <p className="text-caramel text-xs font-semibold uppercase tracking-widest mb-1">What people say</p>
-            <h2 className="font-display text-3xl font-bold text-espresso">Loved by Pune ❤️</h2>
-          </div>
-          <div className="grid gap-6 md:grid-cols-3">
-            {TESTIMONIALS.map(t => (
-              <div key={t.name} className="bg-white rounded-2xl border border-border p-6 shadow-sm">
-                <div className="flex gap-0.5 mb-3">
-                  {Array(t.stars).fill(0).map((_, i) => (
-                    <Star key={i} size={14} fill="oklch(72% 0.12 68)" className="text-caramel" />
-                  ))}
-                </div>
-                <p className="text-sm text-muted-foreground leading-relaxed mb-4">"{t.text}"</p>
-                <p className="font-semibold text-espresso text-sm">— {t.name}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Find Us */}
-      <section className="border-t py-16" style={{ background: 'oklch(96% 0.018 85)' }}>
+      {/* SECTION 5: FIND US IN ERANDWANE */}
+      <section className="border-t border-border bg-cream/70 py-16">
         <div className="mx-auto max-w-6xl px-4 text-center">
-          <MapPin size={32} className="mx-auto mb-3 text-caramel" style={{ color: 'oklch(72% 0.12 68)' }} />
-          <h2 className="font-display text-3xl font-bold text-espresso mb-3">Find us in Erandwane</h2>
-          <p className="text-muted-foreground mb-6">Karve Road, Opp. Ranka Jewellers, Erandwane, Pune, Maharashtra, India</p>
+          <MapPin className="mx-auto h-8 w-8 text-primary" />
+          <h2 className="mt-3 font-display text-3xl font-bold text-foreground">Find us in Erandwane</h2>
+          <p className="mt-3 text-muted-foreground">
+            Karve Road, Opp. Ranka Jewellers, Erandwane, Pune, Maharashtra, India
+          </p>
           <a
             href="https://www.google.com/maps/search/?api=1&query=Karve+Road+Opp+Ranka+Jewellers+Erandwane+Pune"
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center gap-2 rounded-xl border border-border bg-white px-6 py-3 text-sm font-semibold text-espresso hover:bg-muted transition-colors shadow-sm"
+            className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground h-9 px-4 py-2 mt-6 text-foreground"
           >
-            <MapPin size={14} /> Open in Google Maps
+            Open in Google Maps
           </a>
         </div>
       </section>

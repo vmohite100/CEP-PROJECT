@@ -156,3 +156,4 @@ export default function ReceiptModal({ order, onClose }: ReceiptModalProps) {
     </div>
   );
 }
+
