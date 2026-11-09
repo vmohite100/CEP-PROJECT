@@ -1,17 +1,33 @@
-import { useState } from 'react';
-import { MENU_DATA } from '../data/menuData';
+import { useState, useEffect } from 'react';
+import { getMenuItems, getCategories } from '../lib/menuService';
 import { useCart } from '../context/CartContext';
 import { formatINR } from '../lib/utils';
 import { Search } from 'lucide-react';
+import type { MenuItem } from '../data/menuData';
 
 export default function MenuPage() {
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [search, setSearch] = useState('');
+  const [items, setItems] = useState<MenuItem[]>(getMenuItems);
+  const categories = getCategories();
   const { addItem, items: cartItems } = useCart();
 
-  const filtered = MENU_DATA.items.filter(item => {
+  useEffect(() => {
+    const handleUpdate = () => {
+      setItems(getMenuItems());
+    };
+    window.addEventListener('tfc_menu_updated', handleUpdate);
+    window.addEventListener('storage', handleUpdate);
+    return () => {
+      window.removeEventListener('tfc_menu_updated', handleUpdate);
+      window.removeEventListener('storage', handleUpdate);
+    };
+  }, []);
+
+  const filtered = items.filter(item => {
     const matchCat = activeCategory === 'all' || item.category_id === activeCategory;
-    const matchSearch = item.name.toLowerCase().includes(search.toLowerCase()) ||
+    const matchSearch =
+      item.name.toLowerCase().includes(search.toLowerCase()) ||
       (item.description?.toLowerCase().includes(search.toLowerCase()) ?? false);
     return matchCat && matchSearch && item.is_available;
   });
@@ -51,7 +67,7 @@ export default function MenuPage() {
             >
               All
             </button>
-            {MENU_DATA.categories.map(cat => (
+            {categories.map(cat => (
               <button
                 key={cat.id}
                 onClick={() => setActiveCategory(cat.id)}
@@ -77,9 +93,8 @@ export default function MenuPage() {
           </div>
         ) : (
           <>
-            {/* If showing all, group by category */}
             {activeCategory === 'all' && !search ? (
-              MENU_DATA.categories.map(cat => {
+              categories.map(cat => {
                 const catItems = filtered.filter(i => i.category_id === cat.id);
                 if (!catItems.length) return null;
                 return (
@@ -90,14 +105,28 @@ export default function MenuPage() {
                       <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">{catItems.length} items</span>
                     </div>
                     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                      {catItems.map(item => <MenuCard key={item.id} item={item} qty={getCartQty(item.id)} onAdd={() => addItem({ id: item.id, name: item.name, price: item.price })} onAddMore={() => addItem({ id: item.id, name: item.name, price: item.price })} />)}
+                      {catItems.map(item => (
+                        <MenuCard
+                          key={item.id}
+                          item={item}
+                          qty={getCartQty(item.id)}
+                          onAdd={() => addItem({ id: item.id, name: item.name, price: item.price })}
+                        />
+                      ))}
                     </div>
                   </div>
                 );
               })
             ) : (
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {filtered.map(item => <MenuCard key={item.id} item={item} qty={getCartQty(item.id)} onAdd={() => addItem({ id: item.id, name: item.name, price: item.price })} onAddMore={() => addItem({ id: item.id, name: item.name, price: item.price })} />)}
+                {filtered.map(item => (
+                  <MenuCard
+                    key={item.id}
+                    item={item}
+                    qty={getCartQty(item.id)}
+                    onAdd={() => addItem({ id: item.id, name: item.name, price: item.price })}
+                  />
+                ))}
               </div>
             )}
           </>
@@ -115,8 +144,9 @@ const CAT_GRADIENT: Record<string, string> = {
   '5': 'from-orange-950 to-orange-800',
 };
 
-function MenuCard({ item, qty, onAdd, onAddMore }: { item: typeof MENU_DATA.items[0]; qty: number; onAdd: () => void; onAddMore: () => void }) {
-  const cat = MENU_DATA.categories.find(c => c.id === item.category_id);
+function MenuCard({ item, qty, onAdd }: { item: MenuItem; qty: number; onAdd: () => void }) {
+  const categories = getCategories();
+  const cat = categories.find(c => c.id === item.category_id);
   const [flash, setFlash] = useState(false);
 
   const handleAdd = () => {
@@ -127,8 +157,8 @@ function MenuCard({ item, qty, onAdd, onAddMore }: { item: typeof MENU_DATA.item
 
   return (
     <div className="bg-white rounded-2xl border border-border shadow-sm hover:shadow-md transition-all overflow-hidden group">
-      <div className={`h-36 bg-gradient-to-br ${CAT_GRADIENT[item.category_id]} flex items-center justify-center relative`}>
-        <span className="text-5xl group-hover:scale-110 transition-transform duration-300">{cat?.emoji}</span>
+      <div className={`h-36 bg-gradient-to-br ${CAT_GRADIENT[item.category_id] || 'from-amber-950 to-amber-800'} flex items-center justify-center relative`}>
+        <span className="text-5xl group-hover:scale-110 transition-transform duration-300">{cat?.emoji || '☕'}</span>
         {item.is_popular && (
           <span className="absolute top-2.5 right-2.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-caramel text-espresso">Popular</span>
         )}
@@ -140,14 +170,14 @@ function MenuCard({ item, qty, onAdd, onAddMore }: { item: typeof MENU_DATA.item
           <span className="font-bold text-espresso text-lg">{formatINR(item.price)}</span>
           {qty > 0 ? (
             <div className="flex items-center gap-2 bg-muted rounded-full px-1 py-0.5">
-              <button onClick={onAdd} className="w-7 h-7 rounded-full flex items-center justify-center font-bold text-espresso hover:bg-white transition-colors text-sm">+</button>
+              <button onClick={onAdd} className="w-7 h-7 rounded-full flex items-center justify-center font-bold text-espresso hover:bg-white transition-colors text-sm cursor-pointer">+</button>
               <span className="font-bold text-sm text-espresso w-4 text-center">{qty}</span>
               <span className="text-xs text-muted-foreground">in cart</span>
             </div>
           ) : (
             <button
               onClick={handleAdd}
-              className={`text-sm font-semibold px-4 py-1.5 rounded-full transition-all active:scale-95 ${flash ? 'bg-green-500 text-white' : 'text-cream'}`}
+              className={`text-sm font-semibold px-4 py-1.5 rounded-full transition-all active:scale-95 cursor-pointer ${flash ? 'bg-green-500 text-white' : 'text-cream'}`}
               style={!flash ? { background: 'oklch(30% 0.05 50)' } : {}}
             >
               {flash ? '✓ Added' : '+ Add'}

@@ -1,10 +1,9 @@
+import { useState, useEffect } from 'react';
 import { ArrowRight, QrCode, MapPin, Star } from 'lucide-react';
-import { MENU_DATA } from '../data/menuData';
+import { getMenuItems, getCategories } from '../lib/menuService';
 import { useCart } from '../context/CartContext';
 import { formatINR } from '../lib/utils';
 import type { Page } from '../App';
-
-const POPULAR_ITEMS = MENU_DATA.items.filter(i => i.is_popular).slice(0, 6);
 
 const CAT_BG: Record<string, string> = {
   '1': 'from-amber-900/80 to-amber-700/80',
@@ -22,6 +21,20 @@ const TESTIMONIALS = [
 
 export default function HomePage({ navigate }: { navigate: (page: Page) => void }) {
   const { addItem } = useCart();
+  const categories = getCategories();
+  const [popularItems, setPopularItems] = useState(() => getMenuItems().filter(i => i.is_popular).slice(0, 6));
+
+  useEffect(() => {
+    const handleUpdate = () => {
+      setPopularItems(getMenuItems().filter(i => i.is_popular).slice(0, 6));
+    };
+    window.addEventListener('tfc_menu_updated', handleUpdate);
+    window.addEventListener('storage', handleUpdate);
+    return () => {
+      window.removeEventListener('tfc_menu_updated', handleUpdate);
+      window.removeEventListener('storage', handleUpdate);
+    };
+  }, []);
 
   return (
     <div>
@@ -87,8 +100,8 @@ export default function HomePage({ navigate }: { navigate: (page: Page) => void 
           </button>
         </div>
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {POPULAR_ITEMS.map(item => {
-            const cat = MENU_DATA.categories.find(c => c.id === item.category_id);
+          {popularItems.map(item => {
+            const cat = categories.find(c => c.id === item.category_id);
             return (
               <div key={item.id} className="group bg-white rounded-2xl border border-border shadow-sm hover:shadow-lg transition-all overflow-hidden">
                 {/* Card image area */}
@@ -129,7 +142,7 @@ export default function HomePage({ navigate }: { navigate: (page: Page) => void 
           <p className="text-caramel text-xs font-semibold uppercase tracking-widest mb-1">What we serve</p>
           <h2 className="font-display text-3xl font-bold text-espresso mb-8">Browse by Category</h2>
           <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
-            {MENU_DATA.categories.map(cat => (
+            {categories.map(cat => (
               <button
                 key={cat.id}
                 onClick={() => navigate('menu')}

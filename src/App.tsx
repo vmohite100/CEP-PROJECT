@@ -20,7 +20,7 @@ function getInitialPage(): Page {
   if (target === 'menu') return 'menu';
   if (target === 'about') return 'about';
   if (target === 'contact') return 'contact';
-  if (target === 'cart') return 'cart';
+  if (target === 'cart' || target === 'checkout') return 'cart';
   if (target === 'orders') return 'orders';
   return 'home';
 }
